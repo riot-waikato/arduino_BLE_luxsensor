@@ -15,6 +15,9 @@
 //only use this with 1x and 8x gain settings
 #define GAIN_DIVIDE_6 true
 
+//#define DEBUG
+#define DEVICE "0x00"
+
 int gain_val = 0;
 //##############################################
 
@@ -53,7 +56,9 @@ void setup(void)
 {
   Wire.begin();
   Serial.begin(9600);
-  //Serial.println(F("Arduino setup"));
+  #ifdef DEBUG
+  Serial.println(F("Arduino setup"));
+  #endif
 
   /**
      Point ACI data structures to the the setup data that
@@ -112,8 +117,6 @@ void setup(void)
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-bool recv = true;
-
 void aci_loop()
 {
   static bool setup_required = false;
@@ -135,7 +138,10 @@ void aci_loop()
           {
             case ACI_DEVICE_SETUP:
               {
+                #ifdef DEBUG
                 Serial.println(F("Evt Device Started: Setup"));
+                #endif
+                
                 aci_state.device_state = ACI_DEVICE_SETUP;
                 setup_required = true;
               }
@@ -148,7 +154,9 @@ void aci_loop()
                 if (!broadcastSet) {
                   //lib_aci_open_adv_pipe(1);
                   //lib_aci_broadcast(0, 0x0100);
-                  //Serial.println(F("Broadcasting started"));
+                  #ifdef DEBUG
+                  Serial.println(F("Broadcasting started"));
+                  #endif
                   broadcastSet = true;
                 }
 
@@ -163,7 +171,9 @@ void aci_loop()
                 {
                   lib_aci_connect(30/* in seconds */,
                                   0x0100 /* advertising interval 100ms*/);
+                  #ifdef DEBUG
                   Serial.println(F("Advertising started"));
+                  #endif
                 }
               }
               break;
@@ -180,19 +190,23 @@ void aci_loop()
             // TRANSACTION_CONTINUE and TRANSACTION_COMPLETE
             // all other ACI commands will have status code of
             // ACI_STATUS_SCUCCESS for a successful command
+            #ifdef DEBUG
             Serial.print(F("ACI Status of ACI Evt Cmd Rsp 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_status, HEX);
             Serial.print(F("ACI Command 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
             Serial.println(F("Evt Cmd respone: Error. "
-                            "Arduino is in an while(1); loop"));
+                             "Arduino is in an while(1); loop"));
+            #endif
             while (1);
           }
           else
           {
             // print command
+            #ifdef DEBUG
             Serial.print(F("ACI Command 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
+            #endif
           }
         }
         break;
@@ -200,14 +214,17 @@ void aci_loop()
       case ACI_EVT_CONNECTED:
         {
           // The nRF8001 is now connected to the peer device.
+          #ifdef DEBUG
           Serial.println(F("Evt Connected"));
+          #endif
         }
         break;
 
       case ACI_EVT_DATA_CREDIT:
         {
-
-          //Serial.println(F("Evt Credit: Peer Radio acked our send"));
+          #ifdef DEBUG
+          Serial.println(F("Evt Credit: Peer Radio acked our send"));
+          #endif
 
           /** Bluetooth Radio ack received from the peer radio for
               the data packet sent.  This also signals that the
@@ -224,18 +241,26 @@ void aci_loop()
           // Advertise again if the advertising timed out.
           if (ACI_STATUS_ERROR_ADVT_TIMEOUT ==
               aci_evt->params.disconnected.aci_status) {
+            #ifdef DEBUG
             Serial.println(F("Evt Disconnected -> Advertising timed out"));
             Serial.println(F("nRF8001 going to sleep"));
+            #endif
             lib_aci_sleep();
             aci_state.device_state = ACI_DEVICE_SLEEP;
           }
 
           else
           {
+            #ifdef DEBUG
             Serial.println(F("Evt Disconnected -> Link lost."));
+            #endif
+            
             lib_aci_connect(30/* in seconds */,
                             0x0050 /* advertising interval 50ms*/);
+
+            #ifdef DEBUG
             Serial.println(F("Advertising started"));
+            #endif
           }
         }
         break;
@@ -245,7 +270,7 @@ void aci_loop()
           Serial.println(F("Evt Pipe Status"));
           // check if the peer has subscribed to the
           // Temperature Characteristic
-          
+
           notifyTemp = false;
 
         }
@@ -255,10 +280,12 @@ void aci_loop()
         {
           // See the appendix in the nRF8001
           // Product Specication for details on the error codes
+          #ifdef DEBUG
           Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
           Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
           Serial.print(F("  Pipe Error Code: 0x"));
           Serial.println(aci_evt->params.pipe_error.error_code, HEX);
+          #endif
 
           // Increment the credit available as the data packet was not sent.
           // The pipe error also represents the Attribute protocol
@@ -273,8 +300,10 @@ void aci_loop()
 
       case ACI_EVT_DATA_ACK:
         {
+          #ifdef DEBUG
           Serial.println(F("Attribute protocol ACK for "
-          "Temp. measurement Indication"));
+                           "Temp. measurement Indication"));
+          #endif
         }
         break;
 
@@ -290,15 +319,20 @@ void aci_loop()
           Serial.println();
           lib_aci_connect(30/* in seconds */,
                           0x0100 /* advertising interval 100ms*/);
+
+          #ifdef DEBUG
           Serial.println(F("Advertising started"));
+          #endif
         }
         break;
 
       default:
         {
+          #ifdef DEBUG
           Serial.print(F("Evt Opcode 0x"));
           Serial.print(aci_evt->evt_opcode, HEX);
           Serial.println(F(" unhandled"));
+          #endif
         }
         break;
     }
@@ -326,51 +360,98 @@ void aci_loop()
 #define SEQ_NUM 2
 #define LMETERS 4
 
+#define LUX_PERIOD 1000	// period between lux measurements (ms)
+#define SERIAL_PERIOD 200
+
+// for timing of events
 unsigned long time = 0;
 unsigned long last_time = 0;
 
-boolean act = false;
+boolean act = false;	// true if time to read ambient light
 uint8_t timestamp = 0;
 float lux = 0;
 
+bool recv = true;	// true if wireless controller has acknowledged the
+// the last packet sent
+
+/**
+   Reads from the light sensor every one second and writes it to the Wifi
+   transmitter via UART.  If the Wifi transmitter is unable to transmit the
+   data or does not respond in time, will attempt to send via Bluetooth.
+*/
 void loop()
 {
   aci_loop();
 
   time = millis();
-  if (time - last_time > 1000) {
+  if (time - last_time > LUX_PERIOD) {
     last_time = time;
     act = true;
   }
 
-  if (time - last_time > 200) {
-    if (!recv) {
-      while (Serial.available() && !recv) {
+  // allow 200 ms for lux data to be sent
+  if (time - last_time > SERIAL_PERIOD) {
+
+    while (Serial.available()) {
+
+      // check each character if success/failure is not determined
+      if (!recv) {
         int tst = Serial.read();
+
+        // successful Wifi transmission
         if (tst == '+') {
-          //recieved, mark
           recv = true;
         }
+
+        // unsuccessful Wifi transmission
         else if (tst == '-') {
-          //not recieved - send bluetooth
+          #ifdef DEBUG
+          Serial.println("Wifi transmission failed.");
+          #endif
+
+          // check bluetooth readiness
           if (broadcastSet) {
+            send_lux_via_ble();
             //Serial.println("\ntest");
-            uint16_t l2 = (uint16_t)lux;
-            //Serial.println(l2);
-            write_int_to_pipe_2(l2, LMETERS);
-            write_int_to_pipe(timestamp, SEQ_NUM);
-        }
-          
+          }
+
           recv = true;
         }
+
+        // discard extra characters for safety
+        // NOTE: This is so that next time a light data packet is sent we are
+        // guaranteed to not be reading chars that were received before that
+        // packet was sent.
+      } else {
+
+        //TODO: Check that using null as the buffer address discards chars as planned.
+        Serial.readBytes((byte*)0, Serial.available());
       }
     }
   }
 
+  // read ambient light
   if (act) { //I eventually figured out how to actually check it I'm connected.
+
+    // last chance to send previous lux, so check if it was acknowledged
+    if (!recv) {
+      #ifdef DEBUG
+      Serial.println("Wifi module not responding...");
+      #endif
+
+      if (broadcastSet) {
+        
+        send_lux_via_ble();
+      }
+    }
+
     lux = Tsl2572ReadAmbientLight();
     act = false;
-    Serial.print("lux 0x00 ");
+
+    // print lux packet to serial port
+    Serial.print("lux ");
+    Serial.print(DEVICE);
+    Serial.print(" ");
     Serial.print(lux);
     Serial.print(" ");
     Serial.print(timestamp);
@@ -380,25 +461,39 @@ void loop()
   }
 }
 
+/**
+   Send a lux packet via bluetooth.
+*/
+void send_lux_via_ble() {
+
+  #ifdef DEBUG
+  Serial.println("Sending lux data via bluetooth.");
+  #endif
+  
+  uint16_t l2 = (uint16_t)lux;
+  write_int_to_pipe_2(l2, LMETERS);
+  write_int_to_pipe(timestamp, SEQ_NUM);
+}
+
 void write_int_to_pipe(uint8_t integer, int pipe) {
   lib_aci_set_local_data(&aci_state,
-                        pipe,
-                        (uint8_t*)&integer, 1);
-  
+                         pipe,
+                         (uint8_t*)&integer, 1);
+
 }
 
 void write_int_to_pipe_2(uint16_t integer, int pipe) {
   lib_aci_set_local_data(&aci_state,
-                        pipe,
-                        (uint8_t*)((&integer)), 2);
-  
+                         pipe,
+                         (uint8_t*)((&integer)), 2);
+
 }
 
 void write_to_pipe(float f, int pipe) {
   //I still have no idea why this even compiles
   //lib_aci_set_local_data(&aci_state,
-   //                      pipe,
-   //                      (uint8_t*)&f, 4);
+  //                      pipe,
+  //                      (uint8_t*)&f, 4);
   //magic number 4 is number of bytes our datatype uses
   //almost missed it
 }
