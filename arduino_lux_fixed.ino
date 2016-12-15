@@ -470,8 +470,8 @@ void send_lux_via_ble() {
   Serial.println("Sending lux data via bluetooth.");
   #endif
   
-  uint16_t l2 = __builtin_bswap16((uint16_t)lux);
-  write_int_to_pipe_2(l2, LMETERS);
+  uint32_t l2 = __builtin_bswap32((uint32_t)lux);
+  write_int_to_pipe_3(l2, LMETERS);
   write_int_to_pipe(timestamp, SEQ_NUM);
 }
 
@@ -486,6 +486,13 @@ void write_int_to_pipe_2(uint16_t integer, int pipe) {
   lib_aci_set_local_data(&aci_state,
                          pipe,
                          (uint8_t*)((&integer)), 2);
+
+}
+
+void write_int_to_pipe_3(uint32_t integer, int pipe) {
+  lib_aci_set_local_data(&aci_state,
+                         pipe,
+                         (uint8_t*)((&integer)), 4);
 
 }
 
