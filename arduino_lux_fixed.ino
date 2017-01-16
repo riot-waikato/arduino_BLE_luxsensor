@@ -1,8 +1,8 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <EEPROM.h>
-#include "lib_aci.h"
-#include "aci_setup.h"
+#include <lib_aci.h>
+#include <aci_setup.h>
 
 //############################################## - Ambient Light
 #define TSL2572_I2CADDR     0x39
@@ -15,7 +15,7 @@
 //only use this with 1x and 8x gain settings
 #define GAIN_DIVIDE_6 true
 
-//#define DEBUG
+#define DEBUG
 #define DEVICE "0x00"
 
 int gain_val = 0;
@@ -38,7 +38,7 @@ static services_pipe_type_mapping_t * services_pipe_type_mapping = NULL;
 
 static const hal_aci_data_t setup_msgs[NB_SETUP_MESSAGES] PROGMEM =
   SETUP_MESSAGES_CONTENT;
-static struct aci_state_t aci_state;
+struct aci_state_t aci_stat;
 static hal_aci_evt_t aci_data;
 
 /* Define how assert should function in the BLE library */
@@ -56,9 +56,9 @@ void setup(void)
 {
   Wire.begin();
   Serial.begin(9600);
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.println(F("Arduino setup"));
-  #endif
+#endif
 
   /**
      Point ACI data structures to the the setup data that
@@ -66,16 +66,16 @@ void setup(void)
   */
   if (NULL != services_pipe_type_mapping)
   {
-    aci_state.aci_setup_info.services_pipe_type_mapping =
+    aci_stat.aci_setup_info.services_pipe_type_mapping =
       &services_pipe_type_mapping[0];
   }
   else
   {
-    aci_state.aci_setup_info.services_pipe_type_mapping = NULL;
+    aci_stat.aci_setup_info.services_pipe_type_mapping = NULL;
   }
-  aci_state.aci_setup_info.number_of_pipes    = NUMBER_OF_PIPES;
-  aci_state.aci_setup_info.setup_msgs         = (hal_aci_data_t*) setup_msgs;
-  aci_state.aci_setup_info.num_setup_msgs     = NB_SETUP_MESSAGES;
+  aci_stat.aci_setup_info.number_of_pipes    = NUMBER_OF_PIPES;
+  aci_stat.aci_setup_info.setup_msgs         = (hal_aci_data_t*) setup_msgs;
+  aci_stat.aci_setup_info.num_setup_msgs     = NB_SETUP_MESSAGES;
 
   /*
     Tell the ACI library, the MCU to nRF8001 pin connections.
@@ -86,23 +86,23 @@ void setup(void)
   // https://learn.adafruit.com/getting-started-with-the-nrf8001-bluefruit-le-breakout
 
   // See board.h for details
-  aci_state.aci_pins.board_name = BOARD_DEFAULT;
-  aci_state.aci_pins.reqn_pin   = 10;
-  aci_state.aci_pins.rdyn_pin   = 2;
-  aci_state.aci_pins.mosi_pin   = MOSI;
-  aci_state.aci_pins.miso_pin   = MISO;
-  aci_state.aci_pins.sck_pin    = SCK;
+  aci_stat.aci_pins.board_name = BOARD_DEFAULT;
+  aci_stat.aci_pins.reqn_pin   = 10;
+  aci_stat.aci_pins.rdyn_pin   = 2;
+  aci_stat.aci_pins.mosi_pin   = MOSI;
+  aci_stat.aci_pins.miso_pin   = MISO;
+  aci_stat.aci_pins.sck_pin    = SCK;
 
   // SPI_CLOCK_DIV8  = 2MHz SPI speed
-  aci_state.aci_pins.spi_clock_divider      = SPI_CLOCK_DIV8;
+  aci_stat.aci_pins.spi_clock_divider      = SPI_CLOCK_DIV8;
 
-  aci_state.aci_pins.reset_pin              = 9;
-  aci_state.aci_pins.active_pin             = UNUSED;
-  aci_state.aci_pins.optional_chip_sel_pin  = UNUSED;
+  aci_stat.aci_pins.reset_pin              = 9;
+  aci_stat.aci_pins.active_pin             = UNUSED;
+  aci_stat.aci_pins.optional_chip_sel_pin  = UNUSED;
 
   // Interrupts still not available in Chipkit
-  aci_state.aci_pins.interface_is_interrupt = false;
-  aci_state.aci_pins.interrupt_number       = 1;
+  aci_stat.aci_pins.interface_is_interrupt = false;
+  aci_stat.aci_pins.interrupt_number       = 1;
 
   /** We reset the nRF8001 here by toggling the RESET line
       connected to the nRF8001
@@ -111,7 +111,7 @@ void setup(void)
 
   // The second parameter is for turning debug printing on
   // for the ACI Commands and Events so they be printed on the Serial
-  lib_aci_init(&aci_state, false);
+  lib_aci_init(&aci_stat, false);
   /////////////////////////////////////////////////////////////////////////////////////////////////////
   TSL2572nit(GAIN_1X);
   /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ void aci_loop()
 
   // We enter the if statement only when there is a ACI event
   // available to be processed
-  if (lib_aci_event_get(&aci_state, &aci_data))
+  if (lib_aci_event_get(&aci_stat, &aci_data))
   {
     aci_evt_t * aci_evt;
     aci_evt = &aci_data.evt;
@@ -131,32 +131,32 @@ void aci_loop()
     switch (aci_evt->evt_opcode) {
       case ACI_EVT_DEVICE_STARTED:
         {
-          aci_state.data_credit_available =
+          aci_stat.data_credit_available =
             aci_evt->params.device_started.credit_available;
 
           switch (aci_evt->params.device_started.device_mode)
           {
             case ACI_DEVICE_SETUP:
               {
-                #ifdef DEBUG
+#ifdef DEBUG
                 Serial.println(F("Evt Device Started: Setup"));
-                #endif
-                
-                aci_state.device_state = ACI_DEVICE_SETUP;
+#endif
+
+                aci_stat.device_state = ACI_DEVICE_SETUP;
                 setup_required = true;
               }
               break;
 
             case ACI_DEVICE_STANDBY:
               {
-                aci_state.device_state = ACI_DEVICE_STANDBY;
+                aci_stat.device_state = ACI_DEVICE_STANDBY;
 
                 if (!broadcastSet) {
                   //lib_aci_open_adv_pipe(1);
                   //lib_aci_broadcast(0, 0x0100);
-                  #ifdef DEBUG
+#ifdef DEBUG
                   Serial.println(F("Broadcasting started"));
-                  #endif
+#endif
                   broadcastSet = true;
                 }
 
@@ -171,9 +171,9 @@ void aci_loop()
                 {
                   lib_aci_connect(30/* in seconds */,
                                   0x0100 /* advertising interval 100ms*/);
-                  #ifdef DEBUG
+#ifdef DEBUG
                   Serial.println(F("Advertising started"));
-                  #endif
+#endif
                 }
               }
               break;
@@ -190,23 +190,23 @@ void aci_loop()
             // TRANSACTION_CONTINUE and TRANSACTION_COMPLETE
             // all other ACI commands will have status code of
             // ACI_STATUS_SCUCCESS for a successful command
-            #ifdef DEBUG
+#ifdef DEBUG
             Serial.print(F("ACI Status of ACI Evt Cmd Rsp 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_status, HEX);
             Serial.print(F("ACI Command 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
             Serial.println(F("Evt Cmd respone: Error. "
                              "Arduino is in an while(1); loop"));
-            #endif
+#endif
             while (1);
           }
           else
           {
             // print command
-            #ifdef DEBUG
+#ifdef DEBUG
             Serial.print(F("ACI Command 0x"));
             Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
-            #endif
+#endif
           }
         }
         break;
@@ -214,17 +214,17 @@ void aci_loop()
       case ACI_EVT_CONNECTED:
         {
           // The nRF8001 is now connected to the peer device.
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.println(F("Evt Connected"));
-          #endif
+#endif
         }
         break;
 
       case ACI_EVT_DATA_CREDIT:
         {
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.println(F("Evt Credit: Peer Radio acked our send"));
-          #endif
+#endif
 
           /** Bluetooth Radio ack received from the peer radio for
               the data packet sent.  This also signals that the
@@ -241,26 +241,26 @@ void aci_loop()
           // Advertise again if the advertising timed out.
           if (ACI_STATUS_ERROR_ADVT_TIMEOUT ==
               aci_evt->params.disconnected.aci_status) {
-            #ifdef DEBUG
+#ifdef DEBUG
             Serial.println(F("Evt Disconnected -> Advertising timed out"));
             Serial.println(F("nRF8001 going to sleep"));
-            #endif
+#endif
             lib_aci_sleep();
-            aci_state.device_state = ACI_DEVICE_SLEEP;
+            aci_stat.device_state = ACI_DEVICE_SLEEP;
           }
 
           else
           {
-            #ifdef DEBUG
+#ifdef DEBUG
             Serial.println(F("Evt Disconnected -> Link lost."));
-            #endif
-            
+#endif
+
             lib_aci_connect(30/* in seconds */,
                             0x0050 /* advertising interval 50ms*/);
 
-            #ifdef DEBUG
+#ifdef DEBUG
             Serial.println(F("Advertising started"));
-            #endif
+#endif
           }
         }
         break;
@@ -280,12 +280,12 @@ void aci_loop()
         {
           // See the appendix in the nRF8001
           // Product Specication for details on the error codes
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
           Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
           Serial.print(F("  Pipe Error Code: 0x"));
           Serial.println(aci_evt->params.pipe_error.error_code, HEX);
-          #endif
+#endif
 
           // Increment the credit available as the data packet was not sent.
           // The pipe error also represents the Attribute protocol
@@ -293,17 +293,17 @@ void aci_loop()
           //for the credit.
           if (ACI_STATUS_ERROR_PEER_ATT_ERROR !=
               aci_evt->params.pipe_error.error_code) {
-            aci_state.data_credit_available++;
+            aci_stat.data_credit_available++;
           }
         }
         break;
 
       case ACI_EVT_DATA_ACK:
         {
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.println(F("Attribute protocol ACK for "
                            "Temp. measurement Indication"));
-          #endif
+#endif
         }
         break;
 
@@ -320,19 +320,19 @@ void aci_loop()
           lib_aci_connect(30/* in seconds */,
                           0x0100 /* advertising interval 100ms*/);
 
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.println(F("Advertising started"));
-          #endif
+#endif
         }
         break;
 
       default:
         {
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.print(F("Evt Opcode 0x"));
           Serial.print(aci_evt->evt_opcode, HEX);
           Serial.println(F(" unhandled"));
-          #endif
+#endif
         }
         break;
     }
@@ -350,15 +350,12 @@ void aci_loop()
 
   if (setup_required)
   {
-    if (SETUP_SUCCESS == do_aci_setup(&aci_state))
+    if (SETUP_SUCCESS == do_aci_setup(&aci_stat))
     {
       setup_required = false;
     }
   }
 }
-
-#define SEQ_NUM 2
-#define LMETERS 4
 
 #define LUX_PERIOD 1000	// period between lux measurements (ms)
 #define SERIAL_PERIOD 200
@@ -370,6 +367,8 @@ unsigned long last_time = 0;
 boolean act = false;	// true if time to read ambient light
 uint8_t timestamp = 0;
 float lux = 0;
+
+bool ble_sent = false;  // true if a packet was sent successfully via Bluetooth
 
 bool recv = true;	// true if wireless controller has acknowledged the
 // the last packet sent
@@ -405,14 +404,16 @@ void loop()
 
         // unsuccessful Wifi transmission
         else if (tst == '-') {
-          #ifdef DEBUG
+#ifdef DEBUG
           Serial.println("Wifi transmission failed.");
-          #endif
+#endif
 
           // check bluetooth readiness
           if (broadcastSet) {
             send_lux_via_ble();
             //Serial.println("\ntest");
+          } else {
+            Serial.println("Cannot send data via Bluetooth.");
           }
 
           recv = true;
@@ -435,12 +436,12 @@ void loop()
 
     // last chance to send previous lux, so check if it was acknowledged
     if (!recv) {
-      #ifdef DEBUG
+#ifdef DEBUG
       Serial.println("Wifi module not responding...");
-      #endif
+#endif
 
       if (broadcastSet) {
-        
+
         send_lux_via_ble();
       }
     }
@@ -455,7 +456,7 @@ void loop()
     Serial.print(lux);
     Serial.print(" ");
     Serial.print(timestamp);
-    Serial.print(" $");
+    Serial.println(" ");
     timestamp++;
     recv = false;
   }
@@ -466,40 +467,28 @@ void loop()
 */
 void send_lux_via_ble() {
 
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.println("Sending lux data via bluetooth.");
-  #endif
-  
+#endif
+
+  if (write_float_to_pipe(lux, PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET)) {
+    Serial.println("Wrote lux measurement to Bluetooth chip.");
+  } else {
+    Serial.println("ERROR: Could not write lux measurement to Bluetooth chip.");
+  }
+
   uint16_t l2 = (uint16_t)lux;
-  write_int_to_pipe_2(l2, LMETERS);
-  write_int_to_pipe(timestamp, SEQ_NUM);
+
+  if (lib_aci_set_local_data(&aci_stat, PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET, (uint8_t*)&timestamp, sizeof(timestamp))) {
+    Serial.println("Wrote lux measurement to Bluetooth chip.");
+  } else {
+    Serial.println("ERROR: Could not write timestamp to Bluetooth chip.");
+  }
 }
 
-void write_int_to_pipe(uint8_t integer, int pipe) {
-  lib_aci_set_local_data(&aci_state,
-                         pipe,
-                         (uint8_t*)&integer, 1);
-
+bool write_float_to_pipe(float f_arg, int pipe) {
+  return lib_aci_set_local_data(&aci_stat, pipe, (uint8_t*)&f_arg, 4);
 }
-
-void write_int_to_pipe_2(uint16_t integer, int pipe) {
-  lib_aci_set_local_data(&aci_state,
-                         pipe,
-                         (uint8_t*)((&integer)), 2);
-
-}
-
-void write_to_pipe(float f, int pipe) {
-  //I still have no idea why this even compiles
-  //lib_aci_set_local_data(&aci_state,
-  //                      pipe,
-  //                      (uint8_t*)&f, 4);
-  //magic number 4 is number of bytes our datatype uses
-  //almost missed it
-}
-
-
-
 
 void TSL2572nit(uint8_t gain)
 {
@@ -546,3 +535,5 @@ float Tsl2572ReadAmbientLight()
   cpl = max(lux1, lux2);
   return max(cpl, 0.0);
 }
+
+
