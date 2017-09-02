@@ -33,8 +33,8 @@
             <Uuid BaseUUID="74b1000061344da9abe8bc9e3833e943" BaseUUIDName="RIOT Project Base">0003</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <MaxDataLength>20</MaxDataLength>
-            <AttributeLenType>2</AttributeLenType>
+            <MaxDataLength>4</MaxDataLength>
+            <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
             <ForceEncryption>false</ForceEncryption>
             <Properties>
@@ -51,11 +51,11 @@
             <PeriodForProperties/>
         </Characteristic>
         <Characteristic>
-            <Name>Ambient Light Measurement</Name>
-            <Uuid BaseUUID="74b1000061344da9abe8bc9e3833e943" BaseUUIDName="RIOT Project Base">0001</Uuid>
-            <DefaultValue>0</DefaultValue>
-            <UsePresentationFormat>1</UsePresentationFormat>
-            <MaxDataLength>4</MaxDataLength>
+            <Name>Device ID</Name>
+            <Uuid>2a00</Uuid>
+            <DefaultValue></DefaultValue>
+            <UsePresentationFormat>0</UsePresentationFormat>
+            <MaxDataLength>2</MaxDataLength>
             <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
             <ForceEncryption>false</ForceEncryption>
@@ -68,7 +68,7 @@
             </Properties>
             <SetPipe>true</SetPipe>
             <AckIsAuto>false</AckIsAuto>
-            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="20" NameSpace="01" Unit="0000"/>
+            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="6" NameSpace="01" Unit="0000"/>
             <PeriodForReadingThisCharacteristic>0</PeriodForReadingThisCharacteristic>
             <PeriodForProperties/>
         </Characteristic>

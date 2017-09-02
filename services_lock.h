@@ -14,58 +14,28 @@
 #error Generating configuration for OTP. Please verify usage by removing this error message from include file.
 
 #define SETUP_ID 0
-#define SETUP_FORMAT 3 /** nRF8001 D */
-#define ACI_DYNAMIC_DATA_SIZE 156
+#define SETUP_FORMAT 2 /** nRF8001 Cx */
+#define ACI_DYNAMIC_DATA_SIZE 141
 
-/* Service: Ambient Light Sensor - Characteristic: Sequence Number - Pipe: TX */
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX          1
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX_MAX_SIZE 1
+/* Service: Light Sensor - Characteristic: Lux - Pipe: TX */
+#define PIPE_LIGHT_SENSOR_LUX_TX          1
+#define PIPE_LIGHT_SENSOR_LUX_TX_MAX_SIZE 4
 
-/* Service: Ambient Light Sensor - Characteristic: Sequence Number - Pipe: TX_ACK */
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX_ACK          2
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX_ACK_MAX_SIZE 1
+/* Service: Light Sensor - Characteristic: Timestamp - Pipe: TX */
+#define PIPE_LIGHT_SENSOR_TIMESTAMP_TX          2
+#define PIPE_LIGHT_SENSOR_TIMESTAMP_TX_MAX_SIZE 4
 
-/* Service: Ambient Light Sensor - Characteristic: Sequence Number - Pipe: SET */
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET          3
-#define PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET_MAX_SIZE 1
-
-/* Service: Ambient Light Sensor - Characteristic: Device Name - Pipe: TX */
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX          4
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX_MAX_SIZE 20
-
-/* Service: Ambient Light Sensor - Characteristic: Device Name - Pipe: TX_ACK */
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX_ACK          5
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX_ACK_MAX_SIZE 20
-
-/* Service: Ambient Light Sensor - Characteristic: Device Name - Pipe: SET */
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_SET          6
-#define PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_SET_MAX_SIZE 20
-
-/* Service: Ambient Light Sensor - Characteristic: Ambient Light Measurement - Pipe: TX */
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX          7
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX_MAX_SIZE 4
-
-/* Service: Ambient Light Sensor - Characteristic: Ambient Light Measurement - Pipe: TX_ACK */
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX_ACK          8
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX_ACK_MAX_SIZE 4
-
-/* Service: Ambient Light Sensor - Characteristic: Ambient Light Measurement - Pipe: SET */
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET          9
-#define PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET_MAX_SIZE 4
+/* Service: Light Sensor - Characteristic: Device ID - Pipe: TX */
+#define PIPE_LIGHT_SENSOR_DEVICE_ID_TX          3
+#define PIPE_LIGHT_SENSOR_DEVICE_ID_TX_MAX_SIZE 2
 
 
-#define NUMBER_OF_PIPES 9
+#define NUMBER_OF_PIPES 3
 
 #define SERVICES_PIPE_TYPE_MAPPING_CONTENT {\
   {ACI_STORE_LOCAL, ACI_TX},   \
-  {ACI_STORE_LOCAL, ACI_TX_ACK},   \
-  {ACI_STORE_LOCAL, ACI_SET},   \
   {ACI_STORE_LOCAL, ACI_TX},   \
-  {ACI_STORE_LOCAL, ACI_TX_ACK},   \
-  {ACI_STORE_LOCAL, ACI_SET},   \
   {ACI_STORE_LOCAL, ACI_TX},   \
-  {ACI_STORE_LOCAL, ACI_TX_ACK},   \
-  {ACI_STORE_LOCAL, ACI_SET},   \
 }
 
 #define GAP_PPCP_MAX_CONN_INT 0xffff /**< Maximum connection interval as a multiple of 1.25 msec , 0xFFFF means no specific value requested */
@@ -73,137 +43,23 @@
 #define GAP_PPCP_SLAVE_LATENCY 0
 #define GAP_PPCP_CONN_TIMEOUT 0xffff /** Connection Supervision timeout multiplier as a multiple of 10msec, 0xFFFF means no specific value requested */
 
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX
- *  @param src the value to send
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_sequence_number(uint8_t src, bool is_freshest_sample);
-
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX_ACK
- *  @param src the value to send
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_TX_ACK. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_sequence_number_ack(uint8_t src, bool is_freshest_sample);
-
-/** @brief do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET
- *  @param src the value to send
- *  @details use this function to do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET. If no transaction are currently
- *  running, the set will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called.
- */
-void services_set_ambient_light_sensor_sequence_number(uint8_t src);
-
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 20
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_device_name(void *src, int size, bool is_freshest_sample);
-
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX_ACK
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 20
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_TX_ACK. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_device_name_ack(void *src, int size, bool is_freshest_sample);
-
-/** @brief do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_SET
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 20
- *  @details use this function to do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_DEVICE_NAME_SET. If no transaction are currently
- *  running, the set will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called.
- */
-void services_set_ambient_light_sensor_device_name(void *src, int size);
-
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 4
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_ambient_light_measurement(void *src, int size, bool is_freshest_sample);
-
-/** @brief send a new value for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX_ACK
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 4
- *  @param is_freshest_sample set it to true if you want to overwrite an eventual pending transaction on this pipe.
- *  @details use this function to send a new value for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX_ACK. If no transaction are currently
- *  running, the send will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called. If a transaction on this pipe is already pending, then this function
- *  will not overwrite the data of the previous transaction and return false.
- *  @return : true if is_freshest_sample true, otherwise return false if a transaction on this pipe is already pending, true otherwise.
- */
-bool services_send_ambient_light_sensor_ambient_light_measurement_ack(void *src, int size, bool is_freshest_sample);
-
-/** @brief do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET
- *  @param src source buffer to send data from
- *  @param size the number of bytes to send. Maximum size is 4
- *  @details use this function to do a set_local_data for PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET. If no transaction are currently
- *  running, the set will be immediate, otherwise, it will be done at the end of the current transaction
- *  when services_update_pipes will be called.
- */
-void services_set_ambient_light_sensor_ambient_light_measurement(void *src, int size);
-
-/** @brief function to trig pending transaction on pipes
- *  @details This function check for each pipe if it has a pending transaction (send/rx_request/ack)
- *   and if so executes this transaction.
- *   This function should be called in the APP_RUN state of the process function of the application.
- */
-void services_update_pipes(void);
-
-#define NB_SETUP_MESSAGES 22
+#define NB_SETUP_MESSAGES 17
 #define SETUP_MESSAGES_CONTENT {\
     {0x00,\
         {\
-            0x07,0x06,0x00,0x00,0x03,0x02,0x42,0x07,\
+            0x07,0x06,0x00,0x00,0x02,0x02,0x42,0x07,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x00,0x09,0x01,0x01,0x00,0x00,0x06,0x00,0x06,\
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+            0x1f,0x06,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x00,0x03,0x01,0x01,0x00,0x00,0x06,0x00,0x06,\
+            0xc1,0x25,0x64,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x10,0x1c,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x90,0x01,0xff,\
-        },\
-    },\
-    {0x00,\
-        {\
-            0x1f,0x06,0x10,0x38,0xff,0xff,0x02,0x58,0x0a,0x05,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-        },\
-    },\
-    {0x00,\
-        {\
-            0x05,0x06,0x10,0x54,0x00,0x00,\
+            0x1e,0x06,0x10,0x1c,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x11,0x03,0x90,0x01,\
         },\
     },\
     {0x00,\
@@ -232,55 +88,44 @@ void services_update_pipes(void);
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0x70,0x02,0x02,0x00,0x08,0x28,0x00,0x01,0x01,0x18,0x04,0x04,0x10,0x10,0x00,0x09,0x28,\
-            0x00,0x01,0x43,0xe9,0x33,0x38,0x9e,0xbc,0xe8,0xab,0xa9,0x4d,\
+            0x1f,0x06,0x20,0x70,0x02,0x02,0x00,0x08,0x28,0x00,0x01,0x01,0x18,0x04,0x04,0x02,0x02,0x00,0x09,0x28,\
+            0x00,0x01,0x25,0x64,0x04,0x04,0x13,0x13,0x00,0x0a,0x28,0x03,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0x8c,0x34,0x61,0x00,0x00,0xb1,0x74,0x04,0x04,0x13,0x13,0x00,0x0a,0x28,0x03,0x01,0x32,\
-            0x0b,0x00,0x43,0xe9,0x33,0x38,0x9e,0xbc,0xe8,0xab,0xa9,0x4d,\
+            0x1f,0x06,0x20,0x8c,0x01,0x12,0x0b,0x00,0x3f,0x2b,0x75,0xcf,0xd9,0xb8,0x5f,0xbe,0x0c,0x42,0xf5,0x60,\
+            0x24,0x64,0xf3,0xee,0x16,0x04,0x05,0x04,0x00,0x0b,0x64,0x24,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0xa8,0x34,0x61,0x02,0x00,0xb1,0x74,0x36,0x04,0x02,0x01,0x00,0x0b,0x00,0x02,0x02,0x00,\
-            0x46,0x14,0x03,0x02,0x00,0x0c,0x29,0x02,0x01,0x00,0x00,0x04,\
+            0x1f,0x06,0x20,0xa8,0x02,0x00,0x00,0x00,0x00,0x46,0x14,0x03,0x02,0x00,0x0c,0x29,0x02,0x01,0x00,0x00,\
+            0x04,0x04,0x13,0x13,0x00,0x0d,0x28,0x03,0x01,0x10,0x0e,0x00,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0xc4,0x04,0x13,0x13,0x00,0x0d,0x28,0x03,0x01,0x32,0x0e,0x00,0x43,0xe9,0x33,0x38,0x9e,\
-            0xbc,0xe8,0xab,0xa9,0x4d,0x34,0x61,0x03,0x00,0xb1,0x74,0x34,\
+            0x1f,0x06,0x20,0xc4,0x3f,0x2b,0x75,0xcf,0xd9,0xb8,0x5f,0xbe,0x0c,0x42,0xf5,0x60,0x23,0x64,0xf3,0xee,\
+            0x16,0x00,0x05,0x04,0x00,0x0e,0x64,0x23,0x02,0x00,0x00,0x00,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0xe0,0x04,0x14,0x00,0x00,0x0e,0x00,0x03,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+            0x1f,0x06,0x20,0xe0,0x00,0x46,0x14,0x03,0x02,0x00,0x0f,0x29,0x02,0x01,0x00,0x00,0x04,0x04,0x05,0x05,\
+            0x00,0x10,0x28,0x03,0x01,0x10,0x11,0x00,0x00,0x2a,0x16,0x00,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x20,0xfc,0x46,0x14,0x03,0x02,0x00,0x0f,0x29,0x02,0x01,0x00,0x00,0x04,0x04,0x13,0x13,0x00,\
-            0x10,0x28,0x03,0x01,0x32,0x11,0x00,0x43,0xe9,0x33,0x38,0x9e,\
+            0x18,0x06,0x20,0xfc,0x03,0x02,0x00,0x11,0x2a,0x00,0x01,0x00,0x00,0x46,0x14,0x03,0x02,0x00,0x12,0x29,\
+            0x02,0x01,0x00,0x00,0x00,\
         },\
     },\
     {0x00,\
         {\
-            0x1f,0x06,0x21,0x18,0xbc,0xe8,0xab,0xa9,0x4d,0x34,0x61,0x01,0x00,0xb1,0x74,0x36,0x04,0x05,0x04,0x00,\
-            0x11,0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x46,0x14,0x03,0x02,\
-        },\
-    },\
-    {0x00,\
-        {\
-            0x0b,0x06,0x21,0x34,0x00,0x12,0x29,0x02,0x01,0x00,0x00,0x00,\
-        },\
-    },\
-    {0x00,\
-        {\
-            0x1f,0x06,0x40,0x00,0x00,0x02,0x02,0x00,0x86,0x04,0x00,0x0b,0x00,0x0c,0x00,0x03,0x02,0x00,0x86,0x04,\
-            0x00,0x0e,0x00,0x0f,0x00,0x01,0x02,0x00,0x86,0x04,0x00,0x11,\
+            0x1f,0x06,0x40,0x00,0x64,0x24,0x02,0x00,0x02,0x04,0x00,0x0b,0x00,0x0c,0x64,0x23,0x02,0x00,0x02,0x04,\
+            0x00,0x0e,0x00,0x0f,0x2a,0x00,0x01,0x00,0x02,0x04,0x00,0x11,\
         },\
     },\
     {0x00,\
@@ -290,17 +135,12 @@ void services_update_pipes(void);
     },\
     {0x00,\
         {\
-            0x13,0x06,0x50,0x00,0x43,0xe9,0x33,0x38,0x9e,0xbc,0xe8,0xab,0xa9,0x4d,0x34,0x61,0x00,0x00,0xb1,0x74,\
+            0x13,0x06,0x50,0x00,0x3f,0x2b,0x75,0xcf,0xd9,0xb8,0x5f,0xbe,0x0c,0x42,0xf5,0x60,0x00,0x00,0xf3,0xee,\
         },\
     },\
     {0x00,\
         {\
-            0x0c,0x06,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
-        },\
-    },\
-    {0x00,\
-        {\
-            0x06,0x06,0xf0,0x00,0x83,0x92,0x9d,\
+            0x06,0x06,0xf0,0x00,0x82,0x1c,0xb3,\
         },\
     },\
 }
