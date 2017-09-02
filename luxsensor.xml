@@ -33,7 +33,7 @@
             <Uuid BaseUUID="EEF3000060F5420CBE5FB8D9CF752B3F" BaseUUIDName="Light Sensor UUID">6423</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <MaxDataLength>2</MaxDataLength>
+            <MaxDataLength>4</MaxDataLength>
             <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
             <ForceEncryption>false</ForceEncryption>
@@ -51,12 +51,12 @@
             <PeriodForProperties/>
         </Characteristic>
         <Characteristic>
-            <Name>Device Name</Name>
+            <Name>Device ID</Name>
             <Uuid>2a00</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <MaxDataLength>20</MaxDataLength>
-            <AttributeLenType>2</AttributeLenType>
+            <MaxDataLength>2</MaxDataLength>
+            <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
             <ForceEncryption>false</ForceEncryption>
             <Properties>
@@ -68,7 +68,7 @@
             </Properties>
             <SetPipe>false</SetPipe>
             <AckIsAuto>false</AckIsAuto>
-            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="25" NameSpace="01" Unit="0000"/>
+            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="6" NameSpace="01" Unit="0000"/>
             <PeriodForReadingThisCharacteristic>0</PeriodForReadingThisCharacteristic>
             <PeriodForProperties/>
         </Characteristic>
