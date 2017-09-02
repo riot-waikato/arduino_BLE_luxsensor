@@ -281,10 +281,10 @@ void aci_loop()
           // See the appendix in the nRF8001
           // Product Specication for details on the error codes
 #ifdef DEBUG
-          Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
-          Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
-          Serial.print(F("  Pipe Error Code: 0x"));
-          Serial.println(aci_evt->params.pipe_error.error_code, HEX);
+          //Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
+          //Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
+          //Serial.print(F("  Pipe Error Code: 0x"));
+          //Serial.println(aci_evt->params.pipe_error.error_code, HEX);
 #endif
 
           // Increment the credit available as the data packet was not sent.
@@ -368,8 +368,6 @@ boolean act = false;	// true if time to read ambient light
 uint8_t timestamp = 0;
 float lux = 0;
 
-bool ble_sent = false;  // true if a packet was sent successfully via Bluetooth
-
 bool recv = true;	// true if wireless controller has acknowledged the
 // the last packet sent
 
@@ -380,8 +378,9 @@ bool recv = true;	// true if wireless controller has acknowledged the
 */
 void loop()
 {
+  //Serial.println(freeRam());
+ 
   aci_loop();
-
   time = millis();
   if (time - last_time > LUX_PERIOD) {
     last_time = time;
@@ -389,51 +388,50 @@ void loop()
   }
 
   // allow 200 ms for lux data to be sent
-  if (time - last_time > SERIAL_PERIOD) {
+  //if (time - last_time > SERIAL_PERIOD) {
+  while (Serial.available()) {
 
-    while (Serial.available()) {
+    // check each character if success/failure is not determined
+    if (!recv) {
+      int tst = Serial.read();
 
-      // check each character if success/failure is not determined
-      if (!recv) {
-        int tst = Serial.read();
+      // successful Wifi transmission
+      if (tst == '+') {
+        recv = true;
+        Serial.println("Wifi transmission succeeeded.");
+      }
 
-        // successful Wifi transmission
-        if (tst == '+') {
-          recv = true;
-        }
-
-        // unsuccessful Wifi transmission
-        else if (tst == '-') {
+      // unsuccessful Wifi transmission
+      else if (tst == '-') {
 #ifdef DEBUG
-          Serial.println("Wifi transmission failed.");
+        Serial.println("Wifi transmission failed.");
 #endif
 
-          // check bluetooth readiness
-          if (broadcastSet) {
-            send_lux_via_ble();
-            //Serial.println("\ntest");
-          } else {
-            Serial.println("Cannot send data via Bluetooth.");
-          }
-
-          recv = true;
+        // check bluetooth readiness
+        if (broadcastSet) {
+          send_lux_via_ble();
+          //Serial.println("\ntest");
+        } else {
+          Serial.println("Cannot send data via Bluetooth.");
         }
 
-        // discard extra characters for safety
-        // NOTE: This is so that next time a light data packet is sent we are
-        // guaranteed to not be reading chars that were received before that
-        // packet was sent.
-      } else {
-
-        //TODO: Check that using null as the buffer address discards chars as planned.
-        Serial.readBytes((byte*)0, Serial.available());
+        recv = true;
       }
+
+      // discard extra characters for safety
+      // NOTE: This is so that next time a light data packet is sent we are
+      // guaranteed to not be reading chars that were received before that
+      // packet was sent.
+    } else {
+      int discard = Serial.read();
     }
   }
-
+  //}
   // read ambient light
   if (act) { //I eventually figured out how to actually check it I'm connected.
 
+//Serial.println(freeRam());
+    //Serial.println("Time for new light measurement.");
     // last chance to send previous lux, so check if it was acknowledged
     if (!recv) {
 #ifdef DEBUG
@@ -468,11 +466,15 @@ void loop()
 void send_lux_via_ble() {
 
 #ifdef DEBUG
-  Serial.println("Sending lux data via bluetooth.");
+  //Serial.println("Sending lux data via bluetooth.");
 #endif
 
+  if (lib_aci_send_data(PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_TX, (uint8_t*)&lux, 4)) {
+    Serial.println("Started light measurement transfer.");
+  }
+
   if (write_float_to_pipe(lux, PIPE_AMBIENT_LIGHT_SENSOR_AMBIENT_LIGHT_MEASUREMENT_SET)) {
-    Serial.println("Wrote lux measurement to Bluetooth chip.");
+    //Serial.println("Wrote lux measurement to Bluetooth chip.");
   } else {
     Serial.println("ERROR: Could not write lux measurement to Bluetooth chip.");
   }
@@ -480,7 +482,7 @@ void send_lux_via_ble() {
   uint16_t l2 = (uint16_t)lux;
 
   if (lib_aci_set_local_data(&aci_stat, PIPE_AMBIENT_LIGHT_SENSOR_SEQUENCE_NUMBER_SET, (uint8_t*)&timestamp, sizeof(timestamp))) {
-    Serial.println("Wrote lux measurement to Bluetooth chip.");
+    //Serial.println("Wrote sequence number to Bluetooth chip.");
   } else {
     Serial.println("ERROR: Could not write timestamp to Bluetooth chip.");
   }
@@ -536,4 +538,11 @@ float Tsl2572ReadAmbientLight()
   return max(cpl, 0.0);
 }
 
-
+/**
+ * Calculates how much free RAM is available.  From https://playground.arduino.cc/Code/AvailableMemory
+ */
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
